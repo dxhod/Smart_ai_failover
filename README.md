@@ -27,6 +27,7 @@ SUPABASE_SERVICE_ROLE_KEY=
 GEMINI_API_KEY=
 ANTHROPIC_API_KEY=
 GEMINI_MODEL=gemini-3.1-flash-lite
+GEMINI_FALLBACK_MODEL=gemini-2.5-flash
 ANTHROPIC_MODEL=claude-sonnet-4-5
 ```
 
@@ -81,6 +82,7 @@ Playwright uses `E2E_MOCK_API=true`, so E2E tests do not spend Gemini or Claude 
 
 - Standard path: Gemini answers, the UI shows a Gemini badge, and a log record appears in the last 5 requests.
 - Fallback path: debug failover is enabled, Gemini is forced to fail, Claude answers, and the UI shows a Claude badge.
+- Gemini model fallback: n8n tries `GEMINI_MODEL` first, then `GEMINI_FALLBACK_MODEL`, then Claude.
 - Provider outage: if both providers fail, the UI shows a friendly service error.
 - Database outage: if Supabase logging fails after an AI response, the user still receives the response with `db_write_failed` status.
 
@@ -100,7 +102,7 @@ The browser does not call n8n directly. It calls Next.js `/api/ask`, which proxi
 
 History is loaded through `/api/history`, which returns the latest 5 rows from Supabase.
 
-The n8n workflow owns the provider failover behavior. It attempts Gemini first, catches the forced or real failure, calls Claude, persists the final answer to Supabase, and returns only the final answer to the web app.
+The n8n workflow owns the provider failover behavior. It attempts `GEMINI_MODEL` first, then `GEMINI_FALLBACK_MODEL`, catches forced or real Gemini failures, calls Claude as the provider fallback, persists the final answer to Supabase, and returns only the final answer to the web app.
 
 ## Video presentation outline
 

@@ -3,7 +3,6 @@ export type ProviderModel = 'gemini' | 'claude';
 export type AskPayload = {
   text: string;
   force_error: boolean;
-  gemini_model?: string;
 };
 
 export type AskResponse = {

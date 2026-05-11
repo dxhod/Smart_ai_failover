@@ -32,7 +32,6 @@ export async function POST(request: Request) {
     body: JSON.stringify({
       text: payload.text.trim(),
       force_error: Boolean(payload.force_error),
-      gemini_model: payload.gemini_model || undefined,
     }),
   });
 
