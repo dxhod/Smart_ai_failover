@@ -44,6 +44,8 @@ Create the Supabase table:
 4. Copy the project URL into `SUPABASE_URL`.
 5. Copy the service role key into `SUPABASE_SERVICE_ROLE_KEY`.
 
+To find `SUPABASE_SERVICE_ROLE_KEY`, open Supabase Project Settings, go to API, then copy the `service_role` key from Project API keys. Keep this key server-side only; do not expose it in browser code.
+
 Start n8n:
 
 ```powershell
