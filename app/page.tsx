@@ -50,11 +50,7 @@ export default function Home() {
   return (
     <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 px-4 py-6 md:px-6">
       <header className="border-b border-line pb-5">
-        <p className="text-sm font-semibold uppercase text-accent">MVP</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-normal">Smart AI Failover</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
-          Gemini is used first. Claude answers when the primary provider fails or debug failover is enabled.
-        </p>
+        <h1 className="text-3xl font-semibold tracking-normal">Smart AI Failover</h1>
       </header>
 
       <div className="grid gap-5 lg:grid-cols-[420px_1fr]">
