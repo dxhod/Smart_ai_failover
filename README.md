@@ -11,9 +11,13 @@ MVP web tool for AI provider failover. Gemini is the primary model. Claude is us
 - Vitest unit tests
 - Playwright E2E tests
 
-## Setup
+## First-time setup
 
-```bash
+Clone the repository and install dependencies:
+
+```powershell
+git clone https://github.com/dxhod/Smart_ai_failover.git
+cd Smart_ai_failover
 npm install
 copy .env.example .env
 ```
@@ -32,11 +36,28 @@ ANTHROPIC_MODEL=claude-sonnet-4-5
 ANTHROPIC_FALLBACK_MODEL=claude-haiku-4-5
 ```
 
-Run the Supabase SQL from `supabase/schema.sql`.
+Create the Supabase table:
 
-Import `n8n/workflows/smart-ai-failover.json` into n8n.
+1. Create or open a Supabase project.
+2. Open SQL Editor.
+3. Run the SQL from `supabase/schema.sql`.
+4. Copy the project URL into `SUPABASE_URL`.
+5. Copy the service role key into `SUPABASE_SERVICE_ROLE_KEY`.
 
-Activate the imported workflow. The production webhook URL must be:
+Start n8n:
+
+```powershell
+docker compose up -d n8n
+```
+
+Import the workflow:
+
+1. Open `http://localhost:5678`.
+2. Create the local n8n owner account if prompted.
+3. Import `n8n/workflows/smart-ai-failover.json`.
+4. Activate the imported workflow.
+
+The production webhook URL must be:
 
 ```text
 http://localhost:5678/webhook/smart-ai-failover
