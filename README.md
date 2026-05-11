@@ -38,7 +38,7 @@ ANTHROPIC_FALLBACK_MODEL=claude-haiku-4-5
 
 Create the Supabase table:
 
-1. Create or open a Supabase project at [supabase.com](https://supabase.com/).
+1. Create or open a Supabase project at https://supabase.com/.
 2. Open SQL Editor.
 3. Run the SQL from `supabase/schema.sql`.
 4. Copy the project URL into `SUPABASE_URL`.
