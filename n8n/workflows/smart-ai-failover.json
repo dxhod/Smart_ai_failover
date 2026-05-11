@@ -1,0 +1,58 @@
+{
+  "name": "Smart AI Failover",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "smart-ai-failover",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "smart-ai-failover"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json.body ?? $input.first().json;\nconst text = String(input.text ?? '').trim();\nconst forceError = Boolean(input.force_error);\nconst geminiModel = $env.GEMINI_MODEL || 'gemini-2.5-flash';\nconst anthropicModel = $env.ANTHROPIC_MODEL || 'claude-sonnet-4-5';\n\nif (!text) {\n  return [{ json: { ok: false, statusCode: 400, error: 'Text is required.' } }];\n}\n\nconst startedAt = new Date();\nlet answer = '';\nlet usedModel = 'gemini';\nlet status = 'success';\nlet errorMessage = '';\n\nfunction describeError(error) {\n  if (!error) return 'Unknown error';\n  return error.message || error.description || JSON.stringify(error);\n}\n\nasync function requestJson(options) {\n  return await this.helpers.httpRequest({\n    ...options,\n    json: true,\n  });\n}\n\nasync function callGemini() {\n  if (forceError) throw new Error('Forced Gemini failure for debug failover.');\n  if (!$env.GEMINI_API_KEY) throw new Error('GEMINI_API_KEY is missing in n8n environment.');\n\n  const data = await requestJson.call(this, {\n    method: 'POST',\n    url: `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent`,\n    headers: {\n      'content-type': 'application/json',\n      'x-goog-api-key': $env.GEMINI_API_KEY,\n    },\n    body: { contents: [{ parts: [{ text }] }] },\n  });\n\n  const content = data.candidates?.[0]?.content?.parts?.[0]?.text;\n  if (!content) throw new Error(data.error?.message ?? 'Gemini returned an empty response.');\n  return content;\n}\n\nasync function callClaude() {\n  if (!$env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY is missing in n8n environment.');\n\n  const data = await requestJson.call(this, {\n    method: 'POST',\n    url: 'https://api.anthropic.com/v1/messages',\n    headers: {\n      'content-type': 'application/json',\n      'x-api-key': $env.ANTHROPIC_API_KEY,\n      'anthropic-version': '2023-06-01',\n    },\n    body: {\n      model: anthropicModel,\n      max_tokens: 1200,\n      messages: [{ role: 'user', content: text }],\n    },\n  });\n\n  const content = data.content?.[0]?.text;\n  if (!content) throw new Error(data.error?.message ?? 'Claude returned an empty response.');\n  return content;\n}\n\ntry {\n  answer = await callGemini.call(this);\n} catch (geminiError) {\n  const geminiMessage = describeError(geminiError);\n  try {\n    answer = await callClaude.call(this);\n    usedModel = 'claude';\n    status = 'fallback_success';\n    errorMessage = geminiMessage;\n  } catch (claudeError) {\n    const finishedAt = new Date();\n    return [{\n      json: {\n        ok: false,\n        statusCode: 503,\n        error: `Gemini failed: ${geminiMessage}; Claude failed: ${describeError(claudeError)}`,\n        startedAt: startedAt.toISOString(),\n        finishedAt: finishedAt.toISOString(),\n      },\n    }];\n  }\n}\n\nconst finishedAt = new Date();\nconst executionTimeMs = finishedAt.getTime() - startedAt.getTime();\nlet finalStatus = status;\n\ntry {\n  await requestJson.call(this, {\n    method: 'POST',\n    url: `${$env.SUPABASE_URL}/rest/v1/ai_request_logs`,\n    headers: {\n      apikey: $env.SUPABASE_SERVICE_ROLE_KEY,\n      authorization: `Bearer ${$env.SUPABASE_SERVICE_ROLE_KEY}`,\n      'content-type': 'application/json',\n      prefer: 'return=minimal',\n    },\n    body: {\n      input_text: text,\n      response_text: answer,\n      used_model: usedModel,\n      status,\n      force_error: forceError,\n      error_message: errorMessage || null,\n      started_at: startedAt.toISOString(),\n      finished_at: finishedAt.toISOString(),\n      execution_time_ms: executionTimeMs,\n    },\n  });\n} catch {\n  finalStatus = 'db_write_failed';\n}\n\nreturn [{ json: { ok: true, answer, usedModel, status: finalStatus, executionTimeMs } }];"
+      },
+      "id": "failover-code",
+      "name": "Failover Engine",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [520, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.ok ? { answer: $json.answer, usedModel: $json.usedModel, status: $json.status, executionTimeMs: $json.executionTimeMs } : { error: $json.error } }}",
+        "options": {
+          "responseCode": "={{ $json.statusCode || 200 }}"
+        }
+      },
+      "id": "respond",
+      "name": "Respond to Web",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [800, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Failover Engine", "type": "main", "index": 0 }]]
+    },
+    "Failover Engine": {
+      "main": [[{ "node": "Respond to Web", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "versionId": "1",
+  "triggerCount": 0,
+  "tags": []
+}

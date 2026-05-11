@@ -1,0 +1,27 @@
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      - n8n
+
+  n8n:
+    image: n8nio/n8n:1.42.1
+    ports:
+      - "5678:5678"
+    env_file:
+      - .env
+    environment:
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      N8N_HOST: localhost
+      WEBHOOK_URL: http://localhost:5678
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./n8n/workflows:/workflows
+
+volumes:
+  n8n_data:
