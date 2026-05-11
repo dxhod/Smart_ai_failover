@@ -105,14 +105,3 @@ The browser does not call n8n directly. It calls Next.js `/api/ask`, which proxi
 History is loaded through `/api/history`, which returns the latest 5 rows from Supabase.
 
 The n8n workflow owns the provider failover behavior. It attempts `GEMINI_MODEL` first, then `GEMINI_FALLBACK_MODEL`, catches forced or real Gemini failures, calls Claude as the provider fallback, tries `ANTHROPIC_MODEL` before `ANTHROPIC_FALLBACK_MODEL`, persists the final answer to Supabase, and returns only the final answer to the web app.
-
-## Video presentation outline
-
-Record a short video covering:
-
-1. Final product behavior in the browser.
-2. Standard Gemini path.
-3. Forced failover path through Claude.
-4. Supabase log table with the latest requests.
-5. n8n workflow structure.
-6. Code structure and test commands.
