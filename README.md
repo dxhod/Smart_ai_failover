@@ -77,6 +77,8 @@ Open `http://localhost:3000`.
 docker compose up --build
 ```
 
+Docker Compose starts the web app and n8n runtime services in one command. First-time Supabase schema setup and n8n workflow import/activation are manual steps.
+
 This starts:
 
 - Next.js web app on `http://localhost:3000`
