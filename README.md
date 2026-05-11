@@ -34,6 +34,12 @@ Run the Supabase SQL from `supabase/schema.sql`.
 
 Import `n8n/workflows/smart-ai-failover.json` into n8n.
 
+Activate the imported workflow. The production webhook URL must be:
+
+```text
+http://localhost:5678/webhook/smart-ai-failover
+```
+
 ## Development
 
 ```bash
@@ -55,12 +61,21 @@ This starts:
 
 Supabase is expected to be hosted and configured through `.env`.
 
+If Docker is used for n8n and local development is used for the web app, run:
+
+```bash
+docker compose up -d n8n
+npm run dev
+```
+
 ## Tests
 
 ```bash
 npm run test
 npm run test:e2e
 ```
+
+Playwright uses `E2E_MOCK_API=true`, so E2E tests do not spend Gemini or Claude API quota.
 
 ## Acceptance scenarios
 
@@ -69,8 +84,31 @@ npm run test:e2e
 - Provider outage: if both providers fail, the UI shows a friendly service error.
 - Database outage: if Supabase logging fails after an AI response, the user still receives the response with `db_write_failed` status.
 
+## Demo checklist
+
+1. Open `http://localhost:3000`.
+2. Send `Explain what AI failover means in two sentences.` with debug failover disabled.
+3. Confirm that the answer badge is `Gemini` and the history row has `success`.
+4. Enable `Debug failover` and send the same prompt.
+5. Confirm that the answer badge is `Claude` and the history row has `fallback_success`.
+6. Open Supabase `ai_request_logs` and confirm that the latest rows were persisted.
+7. Open n8n and show the `Smart AI Failover` workflow.
+
 ## Architecture notes
 
 The browser does not call n8n directly. It calls Next.js `/api/ask`, which proxies the request to `N8N_WEBHOOK_URL`. This keeps the webhook URL server-side.
 
 History is loaded through `/api/history`, which returns the latest 5 rows from Supabase.
+
+The n8n workflow owns the provider failover behavior. It attempts Gemini first, catches the forced or real failure, calls Claude, persists the final answer to Supabase, and returns only the final answer to the web app.
+
+## Video presentation outline
+
+Record a short video covering:
+
+1. Final product behavior in the browser.
+2. Standard Gemini path.
+3. Forced failover path through Claude.
+4. Supabase log table with the latest requests.
+5. n8n workflow structure.
+6. Code structure and test commands.

@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
 import { validatePrompt } from '@/lib/validation';
-import type { AskPayload, AskResponse } from '@/lib/types';
+import type { AskPayload, AskResponse, HistoryItem } from '@/lib/types';
+
+const mockHistory = globalThis as typeof globalThis & {
+  __smartAiFailoverHistory?: HistoryItem[];
+};
 
 export async function POST(request: Request) {
-  const webhookUrl = process.env.N8N_WEBHOOK_URL;
-  if (!webhookUrl) {
-    return NextResponse.json({ error: 'N8N_WEBHOOK_URL is not configured.' }, { status: 500 });
-  }
-
   const payload = (await request.json().catch(() => null)) as AskPayload | null;
   if (!payload) {
     return NextResponse.json({ error: 'Invalid JSON payload.' }, { status: 400 });
@@ -16,6 +15,15 @@ export async function POST(request: Request) {
   const validationError = validatePrompt(payload.text ?? '');
   if (validationError) {
     return NextResponse.json({ error: validationError }, { status: 400 });
+  }
+
+  if (process.env.E2E_MOCK_API === 'true') {
+    return NextResponse.json(mockAskResponse(payload));
+  }
+
+  const webhookUrl = process.env.N8N_WEBHOOK_URL;
+  if (!webhookUrl) {
+    return NextResponse.json({ error: 'N8N_WEBHOOK_URL is not configured.' }, { status: 500 });
   }
 
   const response = await fetch(webhookUrl, {
@@ -36,4 +44,33 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json(data as AskResponse);
+}
+
+function mockAskResponse(payload: AskPayload): AskResponse {
+  const result: AskResponse = {
+    answer: payload.force_error
+      ? 'Mock Claude fallback response.'
+      : 'Mock Gemini primary response.',
+    usedModel: payload.force_error ? 'claude' : 'gemini',
+    status: payload.force_error ? 'fallback_success' : 'success',
+    executionTimeMs: payload.force_error ? 2100 : 1200,
+  };
+
+  const item: HistoryItem = {
+    id: crypto.randomUUID(),
+    inputText: payload.text.trim(),
+    responseText: result.answer,
+    usedModel: result.usedModel,
+    status: result.status,
+    forceError: Boolean(payload.force_error),
+    executionTimeMs: result.executionTimeMs,
+    createdAt: new Date().toISOString(),
+  };
+
+  mockHistory.__smartAiFailoverHistory = [
+    item,
+    ...(mockHistory.__smartAiFailoverHistory ?? []),
+  ].slice(0, 5);
+
+  return result;
 }

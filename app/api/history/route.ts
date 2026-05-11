@@ -1,9 +1,17 @@
 import { NextResponse } from 'next/server';
 import { mapHistoryRow } from '@/lib/mappers';
 import { createSupabaseAdmin } from '@/lib/supabase';
-import type { SupabaseHistoryRow } from '@/lib/types';
+import type { HistoryItem, SupabaseHistoryRow } from '@/lib/types';
+
+const mockHistory = globalThis as typeof globalThis & {
+  __smartAiFailoverHistory?: HistoryItem[];
+};
 
 export async function GET() {
+  if (process.env.E2E_MOCK_API === 'true') {
+    return NextResponse.json({ items: mockHistory.__smartAiFailoverHistory ?? [] });
+  }
+
   try {
     const supabase = createSupabaseAdmin();
     const { data, error } = await supabase
