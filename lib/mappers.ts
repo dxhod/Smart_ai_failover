@@ -8,6 +8,7 @@ export function mapHistoryRow(row: SupabaseHistoryRow): HistoryItem {
     usedModel: row.used_model,
     status: row.status,
     forceError: row.force_error,
+    errorMessage: row.error_message ?? '',
     executionTimeMs: row.execution_time_ms,
     createdAt: row.created_at,
   };

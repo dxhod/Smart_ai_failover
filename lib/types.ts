@@ -3,6 +3,7 @@ export type ProviderModel = 'gemini' | 'claude';
 export type AskPayload = {
   text: string;
   force_error: boolean;
+  gemini_model?: string;
 };
 
 export type AskResponse = {
@@ -19,6 +20,7 @@ export type HistoryItem = {
   usedModel: ProviderModel;
   status: string;
   forceError: boolean;
+  errorMessage: string;
   executionTimeMs: number;
   createdAt: string;
 };
@@ -30,6 +32,7 @@ export type SupabaseHistoryRow = {
   used_model: ProviderModel;
   status: string;
   force_error: boolean;
+  error_message: string | null;
   execution_time_ms: number;
   created_at: string;
 };

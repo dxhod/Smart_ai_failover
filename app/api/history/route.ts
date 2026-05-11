@@ -16,7 +16,7 @@ export async function GET() {
     const supabase = createSupabaseAdmin();
     const { data, error } = await supabase
       .from('ai_request_logs')
-      .select('id,input_text,response_text,used_model,status,force_error,execution_time_ms,created_at')
+      .select('id,input_text,response_text,used_model,status,force_error,error_message,execution_time_ms,created_at')
       .order('created_at', { ascending: false })
       .limit(5);
 

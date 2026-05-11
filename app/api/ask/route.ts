@@ -32,6 +32,7 @@ export async function POST(request: Request) {
     body: JSON.stringify({
       text: payload.text.trim(),
       force_error: Boolean(payload.force_error),
+      gemini_model: payload.gemini_model || undefined,
     }),
   });
 
@@ -63,6 +64,7 @@ function mockAskResponse(payload: AskPayload): AskResponse {
     usedModel: result.usedModel,
     status: result.status,
     forceError: Boolean(payload.force_error),
+    errorMessage: payload.force_error ? 'Forced Gemini failure for debug failover.' : '',
     executionTimeMs: result.executionTimeMs,
     createdAt: new Date().toISOString(),
   };
